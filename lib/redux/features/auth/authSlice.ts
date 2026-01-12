@@ -9,14 +9,14 @@ const loadAuthFromStorage = (): Partial<AuthState> => {
   if (typeof window === "undefined") return {};
 
   try {
-    const token = localStorage.getItem("token");
+    const token =
+      localStorage.getItem("token") || sessionStorage.getItem("token");
     const accessToken = Cookies.get("token");
-    const user = localStorage.getItem("user");
 
-    if (token || user || accessToken) {
+    if (token || accessToken) {
       return {
-        token,
-        user: JSON.parse(user as string),
+        token: token || accessToken,
+        user: null,
         isAuthenticated: true,
       };
     }
@@ -45,18 +45,24 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (
       state: any,
-      action: PayloadAction<{ user: User; token: string }>
+      action: PayloadAction<{ user: User; token: string; remember?: boolean }>,
     ) => {
-      const { user, token } = action.payload;
+      const { user, token, remember } = action.payload;
       state.user = user;
       state.token = token;
       state.isAuthenticated = true;
 
       // Save to localStorage
       if (typeof window !== "undefined") {
-        Cookies.set("token", token);
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
+        if (remember) {
+          Cookies.set("token", token, { expires: 7 }); // Persistent for 7 days
+          localStorage.setItem("token", token);
+          sessionStorage.removeItem("token");
+        } else {
+          Cookies.set("token", token); // Session cookie
+          sessionStorage.setItem("token", token);
+          localStorage.removeItem("token");
+        }
       }
     },
     logout: (state: any) => {
@@ -76,11 +82,15 @@ const authSlice = createSlice({
         Cookies.remove("token");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
       }
 
       if (!Cookies.get("token")) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
       }
     },
     setLoading: (state: any, action: PayloadAction<boolean>) => {
@@ -112,7 +122,7 @@ const authSlice = createSlice({
       if (typeof window !== "undefined") {
         // window.location.href = "/login?logout=true";
         window.location.href = `/login?redirect=${window.location.pathname.slice(
-          1
+          1,
         )}`;
       }
     },
