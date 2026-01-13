@@ -50,3 +50,38 @@ export interface PreferenceCard {
   downloads: number;
   created: string;
 }
+
+export interface ProcedureStat {
+  id: number;
+  rank: number;
+  name: string;
+  specialty: string;
+  downloads: number;
+}
+
+export interface SettingItem {
+  id: string;
+  label: string;
+  enabled: boolean;
+}
+
+export interface SettingSection {
+  id: string;
+  title: string;
+  items: SettingItem[];
+}
+
+export interface Subscription {
+  id: string;
+  user: {
+    name: string;
+    email: string;
+    initials: string;
+    avatarColor: string;
+  };
+  plan: "Enterprise" | "Premium" | "Free";
+  status: "Active" | "Past Due" | "Cancelled";
+  billingCycle: "Monthly" | "Yearly";
+  amount: string;
+  nextBilling: string;
+}
