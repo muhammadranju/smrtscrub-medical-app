@@ -3,24 +3,90 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useResetPasswordMutation } from "@/lib/redux/features/api/authApiSlice";
+import { selectAuthToken } from "@/lib/redux/features/auth/authSlice";
+import { useAppSelector } from "@/lib/redux/hooks";
 import { cn } from "@/lib/utils";
+import { SerializedError } from "@reduxjs/toolkit";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { Eye, EyeOff, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function ResetPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
   const router = useRouter();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const authToken = useAppSelector(selectAuthToken);
+  const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   // Logic to update password
+  //   setIsSuccess(true);
+  // };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Logic to update password
-    setIsSuccess(true);
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long");
+      return;
+    }
+
+    if (!authToken) {
+      toast.error("Session expired. Please try again.");
+      router.push("/forgot-password");
+      return;
+    }
+
+    try {
+      const result = (await resetPassword({
+        password,
+        confirmPassword,
+        authToken,
+      }).unwrap()) as any;
+
+      if (result.success) {
+        toast.success("Password reset successfully");
+        router.push("/login");
+      }
+    } catch (error) {
+      if (error && typeof error === "object" && "status" in error) {
+        const apiError = error as FetchBaseQueryError;
+        if (
+          apiError.status === 400 &&
+          apiError.data &&
+          typeof apiError.data === "object" &&
+          "message" in apiError.data
+        ) {
+          const errorData = apiError.data as { message: string };
+          toast.error(errorData.message);
+        } else if (apiError.status === 401) {
+          toast.error("Session expired. Please try again.");
+          router.push("/forgot-password");
+        } else {
+          toast.error("Failed to reset password");
+        }
+      } else if (error && typeof error === "object" && "message" in error) {
+        const serializedError = error as SerializedError;
+        toast.error(serializedError.message || "Failed to reset password");
+      } else {
+        toast.error((error as string) || "Failed to reset password");
+      }
+    }
   };
 
   if (isSuccess) {
@@ -91,6 +157,8 @@ export function ResetPasswordForm({
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="********"
+              onChange={(e) => setPassword(e.target.value)}
+              value={password}
               className="h-12 rounded-lg border-gray-300 pr-10 focus:border-purple-500 focus:ring-purple-500"
               required
             />
@@ -110,6 +178,8 @@ export function ResetPasswordForm({
             <Input
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={confirmPassword}
               placeholder="47Password"
               className="h-12 rounded-lg border-gray-300 pr-10 focus:border-purple-500 focus:ring-purple-500"
               required
@@ -127,8 +197,9 @@ export function ResetPasswordForm({
         <Button
           type="submit"
           className="w-full h-12 bg-purple-600 hover:bg-[#7c4dff] text-white font-semibold rounded-lg text-base shadow-sm mt-4 uppercase tracking-wide"
+          disabled={isLoading}
         >
-          UPDATE PASSWORD
+          {isLoading ? "Updating..." : "UPDATE PASSWORD"}
         </Button>
       </div>
     </form>
