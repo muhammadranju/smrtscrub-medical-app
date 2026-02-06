@@ -24,12 +24,15 @@ export interface AuthState {
 export interface LoginRequest {
   email?: string;
   password?: string;
+  remember?: boolean;
 }
 
 export interface LoginResponse {
   success: boolean;
   message: string;
-  data: string; // Token
+
+  data: any; // Token or Object containing accessToken and user
+  accessToken?: string;
   user?: User;
 }
 
@@ -46,7 +49,7 @@ export interface ForgotPasswordRequest {
 
 export interface VerifyOTPRequest {
   email: string;
-  otp: string;
+  otp: number;
 }
 
 export interface ResetPasswordRequest {
