@@ -1,9 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useVerifyOTPMutation } from "@/lib/redux/features/api/authApiSlice";
+import {
+  selectUserEmail,
+  setAuthToken,
+} from "@/lib/redux/features/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { cn } from "@/lib/utils";
+import { SerializedError } from "@reduxjs/toolkit";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export function VerifyOTPForm({
   className,
@@ -12,7 +21,10 @@ export function VerifyOTPForm({
   const router = useRouter();
   const [otp, setOtp] = useState(["", "", "", ""]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(180);
+  const [verifyOTP, { isLoading }] = useVerifyOTPMutation();
+  const userEmail = useAppSelector(selectUserEmail);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -42,12 +54,49 @@ export function VerifyOTPForm({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
-    if (code.length === 4) {
-      console.log("Verifying OTP:", code);
-      router.push("/reset-password");
+    // if (code.length === 4) {
+    //   console.log("Verifying OTP:", code);
+    //   router.push("/reset-password");
+    // }
+
+    try {
+      const result = (await verifyOTP({
+        otp: Number(code),
+        email: userEmail,
+      }).unwrap()) as any;
+
+      if (result.success) {
+        if (result.data) {
+          dispatch(setAuthToken(result.data));
+        }
+        toast.success("OTP verified successfully", {
+          description: "Successfully verified OTP",
+        });
+        router.push("/reset-password");
+      }
+    } catch (error) {
+      if (error && typeof error === "object" && "status" in error) {
+        const apiError = error as FetchBaseQueryError;
+        if (
+          apiError.status === 400 &&
+          apiError.data &&
+          typeof apiError.data === "object" &&
+          "message" in apiError.data
+        ) {
+          const errorData = apiError.data as { message: string };
+          toast.error(errorData.message);
+        } else {
+          toast.error("Failed to verify OTP");
+        }
+      } else if (error && typeof error === "object" && "message" in error) {
+        const serializedError = error as SerializedError;
+        toast.error(serializedError.message || "Failed to verify OTP");
+      } else {
+        toast.error((error as string) || "Failed to verify OTP");
+      }
     }
   };
 
@@ -82,6 +131,7 @@ export function VerifyOTPForm({
               }}
               type="text"
               maxLength={1}
+              placeholder="0"
               value={digit}
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
