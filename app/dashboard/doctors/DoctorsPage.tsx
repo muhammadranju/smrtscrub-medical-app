@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Doctors Data matched to image
 const doctors: Doctor[] = [
@@ -321,45 +322,71 @@ const DoctorsPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {paginatedDoctors.map((doctor) => (
-                  <tr
-                    key={doctor._id}
-                    className="hover:bg-gray-50/50 transition-colors group"
-                  >
-                    {/* Doctor Info */}
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-10 h-10 rounded-full  flex items-center justify-center text-white text-sm font-bold`}
-                        >
-                          <img src={doctor.profilePicture} alt="" />
-                          {/* {doctor.initials} */}
-                        </div>
-                        <div>
-                          <div className="font-bold text-gray-900 text-sm">
-                            {doctor.name}
+                {isLoading
+                  ? Array.from({ length: 5 }).map((_, index) => (
+                      <tr key={index} className="animate-pulse">
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="space-y-2">
+                              <Skeleton className="h-3 w-32" />
+                              <Skeleton className="h-3 w-40" />
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {doctor.email}
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-3 w-24" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-3 w-28" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-6 w-20 rounded-full" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-3 w-10" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-6 w-24 rounded-full" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex justify-end gap-3">
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <Skeleton className="h-5 w-5 rounded-full" />
                           </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Specialty */}
-                    <td className="py-4 px-6 text-sm text-gray-700">
-                      {doctor.specialty || "N/A"}
-                    </td>
-
-                    {/* Hospital */}
-                    <td className="py-4 px-6 text-sm text-gray-500">
-                      {doctor.hospital || "N/A"}
-                    </td>
-
-                    {/* Status */}
-                    <td className="py-4 px-6">
-                      <span
-                        className={`
+                        </td>
+                      </tr>
+                    ))
+                  : paginatedDoctors.map((doctor) => (
+                      <tr
+                        key={doctor._id}
+                        className="hover:bg-gray-50/50 transition-colors group"
+                      >
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                              <img src={doctor.profilePicture} alt="" />
+                            </div>
+                            <div>
+                              <div className="font-bold text-gray-900 text-sm">
+                                {doctor.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {doctor.email}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-sm text-gray-700">
+                          {doctor.specialty || "N/A"}
+                        </td>
+                        <td className="py-4 px-6 text-sm text-gray-500">
+                          {doctor.hospital || "N/A"}
+                        </td>
+                        <td className="py-4 px-6">
+                          <span
+                            className={`
                       inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium  lowercase
                       ${
                         doctor.status === "ACTIVE"
@@ -367,20 +394,16 @@ const DoctorsPage = () => {
                           : "bg-red-100 text-red-700"
                       }
                     `}
-                      >
-                        {doctor.status}
-                      </span>
-                    </td>
-
-                    {/* Cards */}
-                    <td className="py-4 px-6 text-sm font-bold text-gray-900 pl-8">
-                      {doctor.cards}
-                    </td>
-
-                    {/* Subscription */}
-                    <td className="py-4 px-6">
-                      <span
-                        className={`
+                          >
+                            {doctor.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-sm font-bold text-gray-900 pl-8">
+                          {doctor.cards}
+                        </td>
+                        <td className="py-4 px-6">
+                          <span
+                            className={`
                       inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                       ${
                         doctor.subscription === "Premium"
@@ -390,42 +413,44 @@ const DoctorsPage = () => {
                             : "bg-gray-100 text-gray-700"
                       }
                     `}
-                      >
-                        {doctor.subscription || "N/A"}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-4 px-6">
-                      <div className="flex items-center justify-end gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => handleEditClick(doctor)}
-                          className="text-gray-500 hover:text-[#9945FF] transition-colors cursor-pointer"
-                        >
-                          <SquarePen size={18} />
-                        </button>
-                        <button
-                          className={`${doctor.status === "ACTIVE" ? "text-red-500 hover:text-red-700" : "text-green-500 hover:text-green-700"} transition-colors cursor-pointer`}
-                          onClick={() => {
-                            handleStatusChangeClick(doctor);
-                          }}
-                        >
-                          {doctor.status === "RESTRICTED" ? (
-                            <CheckCircle2 size={18} />
-                          ) : (
-                            <XCircle size={18} />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(doctor)}
-                          className="text-red-500 hover:text-red-700 transition-colors cursor-pointer"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          >
+                            {doctor.subscription || "N/A"}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center justify-end gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => handleEditClick(doctor)}
+                              className="text-gray-500 hover:text-[#9945FF] transition-colors cursor-pointer"
+                            >
+                              <SquarePen size={18} />
+                            </button>
+                            <button
+                              className={`${
+                                doctor.status === "ACTIVE"
+                                  ? "text-red-500 hover:text-red-700"
+                                  : "text-green-500 hover:text-green-700"
+                              } transition-colors cursor-pointer`}
+                              onClick={() => {
+                                handleStatusChangeClick(doctor);
+                              }}
+                            >
+                              {doctor.status === "RESTRICTED" ? (
+                                <CheckCircle2 size={18} />
+                              ) : (
+                                <XCircle size={18} />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(doctor)}
+                              className="text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>
