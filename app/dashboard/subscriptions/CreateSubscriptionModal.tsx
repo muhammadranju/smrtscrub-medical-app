@@ -12,11 +12,22 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useGetSubscriptionPlansQuery } from "@/lib/redux/features/api/subscriptions/subscriptionApiSlice";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
 export function CreateSubscriptionModal() {
   const [open, setOpen] = useState(false);
+
+  const {
+    data: subscriptionPlans,
+    isLoading: isLoadingSubscriptionPlans,
+    error: subscriptionPlansError,
+  } = useGetSubscriptionPlansQuery(null);
+
+  if (isLoadingSubscriptionPlans) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
