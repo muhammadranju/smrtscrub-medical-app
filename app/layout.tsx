@@ -1,6 +1,7 @@
 import StoreProvider from "@/lib/redux/provider";
 import "./globals.css";
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "SmrtScrub ",
@@ -15,7 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <StoreProvider>{children}</StoreProvider>
+        <StoreProvider>
+          <Toaster richColors />
+          {children}
+        </StoreProvider>
       </body>
     </html>
   );
