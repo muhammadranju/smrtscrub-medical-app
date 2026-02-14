@@ -1,21 +1,25 @@
 "use client";
-
 import React from "react";
-
-import { ActivityData, StatData } from "@/types/interface";
+import { StatData } from "@/types/interface";
 import { CreditCard, FileText, ShieldCheck, Users } from "lucide-react";
-
-import ActivityList from "@/components/dashboard/ActivityList";
+import RevenueChart from "@/components/dashboard/RevenueChart";
 import StatCard from "@/components/dashboard/StatCard";
+import SubscriptionChart from "@/components/dashboard/SubscriptionChart";
+import { useGetAllStatsQuery } from "@/lib/redux/features/api/dashboard/dashboardApiSlice";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const OverviewPage: React.FC = () => {
   // Mock Data for Stats
+
+  const { data: statsData, isLoading } = useGetAllStatsQuery(null);
+  const summary = statsData?.data.summary || {};
+
   const stats: StatData[] = [
     {
       id: 1,
       label: "Total Doctors",
-      value: "5",
-      percentage: "+12%",
+      value: summary?.doctors?.total || 0,
+      percentage: summary?.doctors?.formattedGrowth || "0.00%",
       icon: Users,
       iconColor: "text-purple-600",
       iconBg: "bg-purple-100",
@@ -23,8 +27,8 @@ const OverviewPage: React.FC = () => {
     {
       id: 2,
       label: "Preference Cards",
-      value: "4",
-      percentage: "+24%",
+      value: summary?.preferenceCards?.total || 0,
+      percentage: summary?.preferenceCards?.formattedGrowth || "0.00%",
       icon: FileText,
       iconColor: "text-blue-600",
       iconBg: "bg-blue-100",
@@ -32,8 +36,9 @@ const OverviewPage: React.FC = () => {
     {
       id: 3,
       label: "Verified Cards",
-      value: "2",
-      percentage: "+8%",
+
+      value: summary?.verifiedPreferenceCards?.total || 0,
+      percentage: summary?.verifiedPreferenceCards?.formattedGrowth || "0.00%",
       icon: ShieldCheck,
       iconColor: "text-green-600",
       iconBg: "bg-green-100",
@@ -41,47 +46,12 @@ const OverviewPage: React.FC = () => {
     {
       id: 4,
       label: "Active Subscriptions",
-      value: "3",
-      percentage: "+5%",
+      value: summary?.activeSubscriptions?.total || 0,
+      percentage: summary?.activeSubscriptions?.formattedGrowth || "0.00%",
+
       icon: CreditCard,
       iconColor: "text-orange-600",
       iconBg: "bg-orange-100",
-    },
-  ];
-
-  // Mock Data for Recent Activity
-  const activities: ActivityData[] = [
-    {
-      id: 1,
-      initials: "DSJ",
-      name: "Dr. Sarah Johnson",
-      lastActive: "Jan 5, 08:30 AM",
-      status: "active",
-      avatarColor: "bg-[#9945FF]",
-    },
-    {
-      id: 2,
-      initials: "DMC",
-      name: "Dr. Michael Chen",
-      lastActive: "Jan 4, 04:45 PM",
-      status: "active",
-      avatarColor: "bg-[#9945FF]",
-    },
-    {
-      id: 3,
-      initials: "DER",
-      name: "Dr. Emily Rodriguez",
-      lastActive: "Jan 3, 09:30 AM",
-      status: "active",
-      avatarColor: "bg-[#9945FF]",
-    },
-    {
-      id: 4,
-      initials: "DJW",
-      name: "Dr. James Williams",
-      lastActive: "Dec 20, 02:00 PM",
-      status: "suspended", // Note: Image shows "suspended" with red badge
-      avatarColor: "bg-[#9945FF]",
     },
   ];
 
@@ -89,7 +59,7 @@ const OverviewPage: React.FC = () => {
     <>
       {/* Page Header */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Overview</h2>
         <p className="text-gray-500 mt-1">
           Welcome back, Admin. Here&apos;s your system overview.
         </p>
@@ -97,14 +67,42 @@ const OverviewPage: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <StatCard key={stat.id} {...stat} />
-        ))}
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between"
+              >
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-10 w-10 rounded-xl" />
+              </div>
+            ))
+          : stats.map((stat) => <StatCard key={stat.id} {...stat} />)}
       </div>
 
-      {/* Recent Activity Section */}
-      <div className="w-full">
-        <ActivityList activities={activities} />
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {isLoading ? (
+          <>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <Skeleton className="h-5 w-32 mb-4" />
+              <Skeleton className="h-64 w-full rounded-xl" />
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <Skeleton className="h-5 w-40 mb-4" />
+              <Skeleton className="h-64 w-full rounded-xl" />
+            </div>
+          </>
+        ) : (
+          <>
+            <RevenueChart />
+            <SubscriptionChart />
+          </>
+        )}
       </div>
     </>
   );
