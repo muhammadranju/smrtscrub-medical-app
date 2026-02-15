@@ -3,10 +3,21 @@
 import AnalyticsStatCard from "@/components/dashboard/AnalyticsStatCard";
 import PageHeader from "@/components/dashboard/PageHeader";
 import PopularProceduresList from "@/components/dashboard/PopularProceduresList";
+import { useGetAnalyticsStatsQuery } from "@/lib/redux/features/api/analytics/analyticsApiSlice";
 import { ProcedureStat } from "@/types/interface";
 import { Activity, FileCheck, TrendingUp } from "lucide-react";
 
 const AnalyticsPage = () => {
+  const {
+    data: analyticsStats,
+    isLoading: isLoadingAnalyticsStats,
+    error: analyticsStatsError,
+  } = useGetAnalyticsStatsQuery(null);
+
+  if (isLoadingAnalyticsStats) {
+    return <div>Loading...</div>;
+  }
+
   const procedures: ProcedureStat[] = [
     {
       id: 1,
