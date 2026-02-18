@@ -2,6 +2,7 @@ import { logout } from "@/lib/redux/features/auth/authSlice";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { NavItem } from "@/types/interface";
 import {
+  Book,
   BookMinus,
   CreditCard,
   FileText,
@@ -37,15 +38,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       icon: FileText,
       href: "/dashboard/preference-cards",
     },
+    // {
+    //   label: "Subscriptions",
+    //   icon: CreditCard,
+    //   href: "/dashboard/subscriptions",
+    // },
     {
-      label: "Subscriptions",
-      icon: CreditCard,
-      href: "/dashboard/subscriptions",
+      label: "Sutures",
+      icon: BookMinus,
+      href: "/dashboard/sutures",
     },
     {
-      label: "Inventory",
-      icon: BookMinus,
-      href: "/dashboard/inventory",
+      label: "Supplies",
+      icon: Book,
+      href: "/dashboard/supplies",
     },
     // { label: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
   ];
