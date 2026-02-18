@@ -3,10 +3,16 @@ import { apiSlice } from "../apiSlice";
 export const suturesApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getSutures: builder.query({
-      query: () => ({
-        url: "sutures",
-        method: "GET",
-      }),
+      query: (params?: { page?: number; limit?: number }) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 10;
+
+        return {
+          url: "sutures",
+          method: "GET",
+          params: { page, limit },
+        };
+      },
       providesTags: ["Inventory"],
       transformResponse: (response) => response,
     }),

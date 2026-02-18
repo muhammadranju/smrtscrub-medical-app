@@ -3,10 +3,16 @@ import { apiSlice } from "../apiSlice";
 export const suppliesApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getSupplies: builder.query({
-      query: () => ({
-        url: "supplies",
-        method: "GET",
-      }),
+      query: (params?: { page?: number; limit?: number }) => {
+        const page = params?.page ?? 1;
+        const limit = params?.limit ?? 10;
+
+        return {
+          url: "supplies",
+          method: "GET",
+          params: { page, limit },
+        };
+      },
       providesTags: ["Inventory"],
       transformResponse: (response) => response,
     }),
