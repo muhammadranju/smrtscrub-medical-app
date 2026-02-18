@@ -1,3 +1,5 @@
+import { logout } from "@/lib/redux/features/auth/authSlice";
+import { useAppDispatch } from "@/lib/redux/hooks";
 import { NavItem } from "@/types/interface";
 import {
   BarChart3,
@@ -11,7 +13,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 
 interface SidebarProps {
@@ -21,10 +23,11 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const pathname = usePathname();
-
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const navItems: NavItem[] = [
     {
-      label: "Dashboard",
+      label: "Overview",
       icon: LayoutGrid,
       href: "/dashboard/overview",
     },
@@ -39,9 +42,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       icon: CreditCard,
       href: "/dashboard/subscriptions",
     },
-    { label: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
+    // { label: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
   ];
 
+  const handleLogout = React.useCallback(() => {
+    dispatch(logout());
+    router.push("/");
+    window.location.reload();
+  }, [dispatch, router]);
   return (
     <>
       {/* Mobile Overlay */}
@@ -110,7 +118,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
         {/* Bottom Section - Logout */}
         <div className="p-4 border-t border-gray-50">
-          <button className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-semibold">
+          <button
+            className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm font-semibold cursor-pointer"
+            onClick={handleLogout}
+          >
             <LogOut size={20} />
             <span>Logout</span>
           </button>
