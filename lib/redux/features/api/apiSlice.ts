@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import Cookies from "js-cookie";
 import type { RootState } from "../../store";
 
 export const apiSlice = createApi({
@@ -7,7 +8,15 @@ export const apiSlice = createApi({
     baseUrl: process.env.NEXT_PUBLIC_API_URL,
     prepareHeaders: (headers, { getState }) => {
       // Get token from auth state
-      const token = (getState() as RootState).auth.token;
+      let token = (getState() as RootState).auth.token;
+
+      if (!token && typeof window !== "undefined") {
+        token =
+          Cookies.get("token") ||
+          localStorage.getItem("token") ||
+          sessionStorage.getItem("token");
+      }
+
       if (token) {
         headers.set("authorization", `Bearer ${token}`);
       }
@@ -33,6 +42,8 @@ export const apiSlice = createApi({
     "MockInterview",
     "Notifications",
     "Community",
+    "Analytics",
+    "Subscription",
     "Terms-conditions",
   ],
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -3,62 +3,40 @@ import {
   LoginRequest,
   LoginResponse,
   ResetPasswordRequest,
-  UserProfileResponse,
   VerifyOTPRequest,
 } from "@/interface/auth.interface";
 
-import toast from "react-hot-toast";
 import { logout, setCredentials, setLoading } from "../auth/authSlice";
 import { apiSlice } from "./apiSlice";
 
 export const authApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
-      query: (credentials) => ({
-        url: "/auth/login",
-        method: "POST",
-        body: credentials,
-      }),
+      query: (credentials) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { remember, ...body } = credentials;
+        return {
+          url: "/auth/login",
+          method: "POST",
+          body: body,
+        };
+      },
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         dispatch(setLoading(true));
         try {
           const { data } = await queryFulfilled;
+          const { accessToken, user } = data.data || data;
 
-          // Store token temporarily
-          const token = data.data;
-
-          // Now fetch user profile with the token
-          const profileResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/user/profile`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            },
-          );
-
-          if (!profileResponse.ok) {
-            toast.error("Failed to fetch user profile");
-            throw new Error("Failed to fetch user profile");
-          }
-          const profileData = await profileResponse.json();
-
-          if (process.env.NEXT_PUBLIC_ROLE !== profileData?.data?.role) {
-            toast.error("You are not authorized to access this page");
-            throw new Error("You are not authorized to access this page");
-          }
-
-          // Set credentials with both token and user data
+          // Dispatch credentials with user and token from login response
           dispatch(
             setCredentials({
-              user: profileData.user || profileData, // Handle different response structures
-              token: token,
+              user: user,
+              token: accessToken || data.accessToken,
+              remember: arg.remember,
             }),
           );
-        } catch (error) {
-          dispatch(logout()); // Clear any partial state
-          throw error; // Re-throw to handle in component
+        } catch {
+          // dispatch(logout());
         } finally {
           dispatch(setLoading(false));
         }

@@ -15,6 +15,16 @@ export const userApiSlice = apiSlice.injectEndpoints({
         return response;
       },
     }),
+    listAllUsers: builder.query({
+      query: () => ({
+        url: `/user`,
+      }),
+      providesTags: ["User"],
+      // Transform response to handle different response structures
+      transformResponse: (response) => {
+        return response;
+      },
+    }),
     getBlockedUsers: builder.query({
       query: () => ({
         url: `user/blocked`,
@@ -55,8 +65,8 @@ export const userApiSlice = apiSlice.injectEndpoints({
                   user.userStatus = "blocked";
                 }
               }
-            }
-          )
+            },
+          ),
         );
 
         try {
@@ -97,8 +107,8 @@ export const userApiSlice = apiSlice.injectEndpoints({
                   user.userStatus = "active";
                 }
               }
-            }
-          )
+            },
+          ),
         );
 
         try {
@@ -117,4 +127,5 @@ export const {
   useGetBlockedUsersQuery,
   useBlockedUserMutation,
   useUnblockUserMutation,
+  useListAllUsersQuery,
 } = userApiSlice;
