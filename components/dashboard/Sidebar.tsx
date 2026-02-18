@@ -2,12 +2,11 @@ import { logout } from "@/lib/redux/features/auth/authSlice";
 import { useAppDispatch } from "@/lib/redux/hooks";
 import { NavItem } from "@/types/interface";
 import {
-  BarChart3,
+  BookMinus,
   CreditCard,
   FileText,
   LayoutGrid,
   LogOut,
-  Settings,
   Users,
   X,
 } from "lucide-react";
@@ -15,6 +14,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
+import { MdOutlineInventory } from "react-icons/md";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -41,6 +41,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       label: "Subscriptions",
       icon: CreditCard,
       href: "/dashboard/subscriptions",
+    },
+    {
+      label: "Inventory",
+      icon: BookMinus,
+      href: "/dashboard/inventory",
     },
     // { label: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
   ];
