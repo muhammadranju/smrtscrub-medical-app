@@ -43,6 +43,7 @@ export const apiSlice = createApi({
     "Notifications",
     "Community",
     "Analytics",
+    "Inventory",
     "Subscription",
     "Terms-conditions",
   ],
