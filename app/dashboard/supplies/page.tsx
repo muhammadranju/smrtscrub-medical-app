@@ -28,76 +28,54 @@ import {
   useGetSuppliesQuery,
   useUpdateSupplyMutation,
 } from "@/lib/redux/features/api/inventory/suppliesApiSlice";
-import {
-  useCreateSutureMutation,
-  useCreateSuturesBulkMutation,
-  useDeleteSutureMutation,
-  useGetSuturesQuery,
-  useUpdateSutureMutation,
-} from "@/lib/redux/features/api/inventory/suturesApiSlice";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-type ItemType = "suture" | "supply";
+const ITEMS_PER_PAGE = 10;
 
-const InventoryPage = () => {
-  const { data: suturesData, isLoading: isLoadingSutures } =
-    useGetSuturesQuery(null);
+function SuppliesPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+
   const { data: suppliesData, isLoading: isLoadingSupplies } =
-    useGetSuppliesQuery(null);
+    useGetSuppliesQuery({ page: currentPage, limit: ITEMS_PER_PAGE });
 
-  const [createSuture, { isLoading: isCreatingSuture }] =
-    useCreateSutureMutation();
-  const [createSuturesBulk, { isLoading: isCreatingSutureBulk }] =
-    useCreateSuturesBulkMutation();
   const [createSupply, { isLoading: isCreatingSupply }] =
     useCreateSupplyMutation();
   const [createSuppliesBulk, { isLoading: isCreatingSupplyBulk }] =
     useCreateSuppliesBulkMutation();
-  const [updateSuture, { isLoading: isUpdatingSuture }] =
-    useUpdateSutureMutation();
   const [updateSupply, { isLoading: isUpdatingSupply }] =
     useUpdateSupplyMutation();
-  const [deleteSuture, { isLoading: isDeletingSuture }] =
-    useDeleteSutureMutation();
   const [deleteSupply, { isLoading: isDeletingSupply }] =
     useDeleteSupplyMutation();
 
   const [singleName, setSingleName] = useState("");
   const [bulkNames, setBulkNames] = useState<string[]>([""]);
-  const [openSingleFor, setOpenSingleFor] = useState<ItemType | null>(null);
-  const [openBulkFor, setOpenBulkFor] = useState<ItemType | null>(null);
-  const [editItem, setEditItem] = useState<{
-    type: ItemType;
-    id: string;
-    name: string;
-  } | null>(null);
+  const [isSingleOpen, setIsSingleOpen] = useState(false);
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<{
-    type: ItemType;
-    id: string;
-    name: string;
-  } | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteName, setDeleteName] = useState<string | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  const handleAddSingle = async (type: ItemType, onSuccess?: () => void) => {
+  const supplies = suppliesData?.data || [];
+  const pagination = suppliesData?.pagination;
+  const totalPages = pagination?.totalPage ?? 1;
+
+  const handleAddSingle = async () => {
     if (!singleName.trim()) return;
 
     try {
-      if (type === "suture") {
-        await createSuture({ name: singleName.trim() }).unwrap();
-      } else {
-        await createSupply({ name: singleName.trim() }).unwrap();
-      }
+      await createSupply({ name: singleName.trim() }).unwrap();
       setSingleName("");
-      onSuccess?.();
+      setIsSingleOpen(false);
     } catch (error) {
-      console.error("Failed to create item", error);
+      console.error("Failed to create supply", error);
     }
   };
 
-  const handleAddBulk = async (type: ItemType) => {
+  const handleAddBulk = async () => {
     const cleaned = bulkNames.map((n) => n.trim()).filter(Boolean);
     if (!cleaned.length) return;
 
@@ -106,15 +84,11 @@ const InventoryPage = () => {
     };
 
     try {
-      if (type === "suture") {
-        await createSuturesBulk(payload).unwrap();
-      } else {
-        await createSuppliesBulk(payload).unwrap();
-      }
+      await createSuppliesBulk(payload).unwrap();
       setBulkNames([""]);
-      setOpenBulkFor(null);
+      setIsBulkOpen(false);
     } catch (error) {
-      console.error("Failed to create items in bulk", error);
+      console.error("Failed to create supplies in bulk", error);
     }
   };
 
@@ -134,53 +108,34 @@ const InventoryPage = () => {
     setBulkNames((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleDelete = async (type: ItemType, id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      if (type === "suture") {
-        await deleteSuture(id).unwrap();
-      } else {
-        await deleteSupply(id).unwrap();
-      }
+      await deleteSupply(id).unwrap();
     } catch (error) {
-      console.error("Failed to delete item", error);
+      console.error("Failed to delete supply", error);
     }
   };
 
-  const renderList = (type: ItemType) => {
-    const isBulkLoading =
-      type === "suture" ? isCreatingSutureBulk : isCreatingSupplyBulk;
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Supplies"
+        description="Manage reusable supplies for preference cards"
+      />
 
-    const isListLoading =
-      type === "suture" ? isLoadingSutures : isLoadingSupplies;
-
-    const list =
-      type === "suture" ? suturesData?.data || [] : suppliesData?.data || [];
-
-    return (
       <div className="bg-white rounded-xl border border-purple-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-purple-100 bg-purple-50/40">
           <div>
             <h3 className="text-sm font-semibold text-gray-900">
-              {type === "suture" ? "Sutures List" : "Supplies List"}
+              Supplies List
             </h3>
             <p className="text-xs text-gray-500 mt-1">
-              Manage frequently used{" "}
-              {type === "suture" ? "sutures" : "supplies"}
+              Manage frequently used supplies
             </p>
           </div>
           <div className="flex gap-x-2">
             <div className="flex items-center gap-3">
-              <Dialog
-                open={openSingleFor === type}
-                onOpenChange={(open) => {
-                  if (open) {
-                    setOpenSingleFor(type);
-                  } else {
-                    setOpenSingleFor(null);
-                    setSingleName("");
-                  }
-                }}
-              >
+              <Dialog open={isSingleOpen} onOpenChange={setIsSingleOpen}>
                 <DialogTrigger asChild>
                   <Button
                     size="sm"
@@ -192,15 +147,13 @@ const InventoryPage = () => {
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
                   <DialogHeader>
-                    <DialogTitle>
-                      Add {type === "suture" ? "Suture" : "Supply"}
-                    </DialogTitle>
+                    <DialogTitle>Add Supply</DialogTitle>
                   </DialogHeader>
 
                   <div className="space-y-4">
                     <div>
                       <p className="text-xs font-medium text-gray-500 mb-2">
-                        Single {type === "suture" ? "suture" : "supply"}
+                        Single supply
                       </p>
                       <Input
                         placeholder="Name"
@@ -210,33 +163,18 @@ const InventoryPage = () => {
                       <div className="mt-3 flex items-center gap-2">
                         <Button
                           className="flex-1 bg-red-800 hover:bg-red-600 text-white"
-                          disabled={
-                            type === "suture"
-                              ? isCreatingSuture
-                              : isCreatingSupply
-                          }
-                          onClick={() => setOpenSingleFor(null)}
+                          type="button"
+                          onClick={() => setIsSingleOpen(false)}
                         >
                           Cancel
                         </Button>
                         <Button
                           className="flex-1 bg-[#9945FF] hover:bg-[#7f3ad4]"
-                          disabled={
-                            type === "suture"
-                              ? isCreatingSuture
-                              : isCreatingSupply
-                          }
-                          onClick={() =>
-                            handleAddSingle(type, () => setOpenSingleFor(null))
-                          }
+                          disabled={isCreatingSupply}
+                          type="button"
+                          onClick={handleAddSingle}
                         >
-                          {type === "suture"
-                            ? isCreatingSuture
-                              ? "Saving..."
-                              : "Save"
-                            : isCreatingSupply
-                              ? "Saving..."
-                              : "Save"}
+                          {isCreatingSupply ? "Saving..." : "Save"}
                         </Button>
                       </div>
                     </div>
@@ -245,17 +183,7 @@ const InventoryPage = () => {
               </Dialog>
             </div>
             <div className="flex items-center gap-3">
-              <Dialog
-                open={openBulkFor === type}
-                onOpenChange={(open) => {
-                  if (open) {
-                    setOpenBulkFor(type);
-                  } else {
-                    setOpenBulkFor(null);
-                    setBulkNames([""]);
-                  }
-                }}
-              >
+              <Dialog open={isBulkOpen} onOpenChange={setIsBulkOpen}>
                 <DialogTrigger asChild>
                   <Button className="w-full justify-center text-xs bg-purple-50 text-[#9945FF] border border-purple-200 hover:bg-purple-50/80">
                     <Plus className="w-4 h-4 mr-1" />
@@ -264,9 +192,7 @@ const InventoryPage = () => {
                 </DialogTrigger>
                 <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto relative">
                   <DialogHeader>
-                    <DialogTitle>
-                      Add multiple {type === "suture" ? "sutures" : "supplies"}
-                    </DialogTitle>
+                    <DialogTitle>Add multiple supplies</DialogTitle>
                   </DialogHeader>
 
                   <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
@@ -304,24 +230,14 @@ const InventoryPage = () => {
                   </div>
 
                   <Button
-                    className="mt-4 w-full"
+                    className="mt-4 w-full bg-purple-500  hover:bg-purple-600"
                     type="button"
-                    disabled={
-                      type === "suture"
-                        ? isCreatingSutureBulk
-                        : isCreatingSupplyBulk
-                    }
-                    onClick={() => handleAddBulk(type)}
+                    disabled={isCreatingSupplyBulk}
+                    onClick={handleAddBulk}
                   >
-                    {type === "suture"
-                      ? isCreatingSutureBulk
-                        ? "Saving..."
-                        : "Save All"
-                      : isCreatingSupplyBulk
-                        ? "Saving..."
-                        : "Save All"}
+                    {isCreatingSupplyBulk ? "Saving..." : "Save All"}
                   </Button>
-                  {isBulkLoading && (
+                  {isCreatingSupplyBulk && (
                     <div className="absolute inset-0 bg-white/70 flex items-center justify-center text-sm font-semibold text-gray-700">
                       Saving...
                     </div>
@@ -337,7 +253,7 @@ const InventoryPage = () => {
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  {type === "suture" ? "Sutures" : "Supplies"}
+                  Supplies
                 </th>
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Date
@@ -348,7 +264,7 @@ const InventoryPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {isListLoading && list.length === 0
+              {isLoadingSupplies && supplies.length === 0
                 ? Array.from({ length: 5 }).map((_, index) => (
                     <tr key={index} className="animate-pulse">
                       <td className="py-3 px-6">
@@ -365,7 +281,7 @@ const InventoryPage = () => {
                       </td>
                     </tr>
                   ))
-                : list.map((item: any) => (
+                : supplies.map((item: any) => (
                     <tr
                       key={item._id || item.id}
                       className="hover:bg-gray-50/50"
@@ -385,11 +301,7 @@ const InventoryPage = () => {
                             variant="ghost"
                             className="text-gray-500 hover:text-[#9945FF]"
                             onClick={() => {
-                              setEditItem({
-                                type,
-                                id: item._id || item.id,
-                                name: item.name,
-                              });
+                              setEditId(item._id || item.id);
                               setEditName(item.name);
                               setIsEditOpen(true);
                             }}
@@ -400,16 +312,10 @@ const InventoryPage = () => {
                             size="icon-sm"
                             variant="ghost"
                             className="text-gray-400 hover:text-red-500"
-                            disabled={
-                              (type === "suture" && isDeletingSuture) ||
-                              (type === "supply" && isDeletingSupply)
-                            }
+                            disabled={isDeletingSupply}
                             onClick={() => {
-                              setDeleteItem({
-                                type,
-                                id: item._id || item.id,
-                                name: item.name,
-                              });
+                              setDeleteId(item._id || item.id);
+                              setDeleteName(item.name);
                               setIsDeleteOpen(true);
                             }}
                           >
@@ -419,47 +325,70 @@ const InventoryPage = () => {
                       </td>
                     </tr>
                   ))}
-              {!isListLoading && list.length === 0 && (
+              {!isLoadingSupplies && supplies.length === 0 && (
                 <tr>
                   <td
                     colSpan={3}
                     className="py-6 px-6 text-sm text-gray-400 text-center"
                   >
-                    No {type === "suture" ? "sutures" : "supplies"} added yet.
+                    No supplies added yet.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </div>
-    );
-  };
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Sutures & Supplies"
-        description="Manage reusable sutures and supplies for preference cards"
-      />
+        {!isLoadingSupplies && (
+          <div className="flex items-center justify-end gap-2 mt-4 px-6 pb-4">
+            <Button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </Button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {renderList("suture")}
-        {renderList("supply")}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                  currentPage === page
+                    ? "bg-[#9945FF] text-white"
+                    : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {page}
+              </Button>
+            ))}
+
+            <Button
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              className="flex items-center px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </div>
+
       <Dialog
         open={isEditOpen}
         onOpenChange={(open) => {
           setIsEditOpen(open);
           if (!open) {
-            setEditItem(null);
+            setEditId(null);
             setEditName("");
           }
         }}
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Item</DialogTitle>
+            <DialogTitle>Edit Supply</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Input
@@ -469,45 +398,35 @@ const InventoryPage = () => {
             />
             <Button
               className="w-full bg-[#9945FF] hover:bg-[#7f3ad4]"
-              disabled={
-                isUpdatingSuture ||
-                isUpdatingSupply ||
-                !editItem ||
-                !editName.trim()
-              }
+              disabled={!editId || !editName.trim() || isUpdatingSupply}
               onClick={async () => {
-                if (!editItem || !editName.trim()) return;
+                if (!editId || !editName.trim()) return;
                 try {
-                  if (editItem.type === "suture") {
-                    await updateSuture({
-                      id: editItem.id,
-                      name: editName.trim(),
-                    }).unwrap();
-                  } else {
-                    await updateSupply({
-                      id: editItem.id,
-                      name: editName.trim(),
-                    }).unwrap();
-                  }
+                  await updateSupply({
+                    id: editId,
+                    name: editName.trim(),
+                  }).unwrap();
                   setIsEditOpen(false);
-                  setEditItem(null);
+                  setEditId(null);
                   setEditName("");
                 } catch (error) {
-                  console.error("Failed to update item", error);
+                  console.error("Failed to update supply", error);
                 }
               }}
             >
-              {isUpdatingSuture || isUpdatingSupply ? "Saving..." : "Save"}
+              {isUpdatingSupply ? "Saving..." : "Save"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
       <AlertDialog
         open={isDeleteOpen}
         onOpenChange={(open) => {
           setIsDeleteOpen(open);
           if (!open) {
-            setDeleteItem(null);
+            setDeleteId(null);
+            setDeleteName(null);
           }
         }}
       >
@@ -518,38 +437,29 @@ const InventoryPage = () => {
             </AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. It will permanently remove{" "}
-              {deleteItem?.name || "this item"} from your inventory.
+              {deleteName || "this item"} from your inventory.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={async () => {
-                if (!deleteItem) return;
-                await handleDelete(deleteItem.type, deleteItem.id);
+                if (!deleteId) return;
+                await handleDelete(deleteId);
                 setIsDeleteOpen(false);
-                setDeleteItem(null);
+                setDeleteId(null);
+                setDeleteName(null);
               }}
               className="bg-red-500 hover:bg-red-600 text-white"
-              disabled={
-                deleteItem?.type === "suture"
-                  ? isDeletingSuture
-                  : isDeletingSupply
-              }
+              disabled={isDeletingSupply}
             >
-              {deleteItem?.type === "suture"
-                ? isDeletingSuture
-                  ? "Deleting..."
-                  : "Delete"
-                : isDeletingSupply
-                  ? "Deleting..."
-                  : "Delete"}
+              {isDeletingSupply ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>
   );
-};
+}
 
-export default InventoryPage;
+export default SuppliesPage;
