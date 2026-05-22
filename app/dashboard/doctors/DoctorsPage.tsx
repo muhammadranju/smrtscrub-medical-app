@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import AddDoctorModal from "./AddDoctorModal";
 import EditDoctorModal from "./EditDoctorModal";
-import { useListAllUsersQuery } from "@/lib/redux/features/api/users/userApiSlice";
+import { useListDoctorsQuery } from "@/lib/redux/features/api/users/userApiSlice";
 import { useEffect, useState } from "react";
 import Pagination from "@/components/dashboard/Pagination";
 import {
@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
 
 // Doctors Data matched to image
 const doctors: Doctor[] = [
@@ -105,66 +106,55 @@ const doctors: Doctor[] = [
 ];
 
 interface Doctors {
-  _id: string;
+  id: string;
   name: string;
   email: string;
   profilePicture: string;
   role: string;
-  specialty: string;
-  hospital: string;
+  specialties: string[];
   status: string;
-  cards: number;
-  subscription: string;
-  createdAt?: string;
-  updatedAt?: string;
+  verified: boolean;
+  cardsCount: number;
+  subscriptionPlan: string;
+  createdAt: string;
+  updatedAt: string;
 }
 const DoctorsPage = () => {
-  const [doctors, setDoctors] = useState<Doctors[]>([]);
-
-  const { data: usersData, isLoading, refetch } = useListAllUsersQuery(null);
-  const doctorsData = usersData?.data || [];
-
-  console.log(doctorsData);
-
-  useEffect(() => {
-    setDoctors(doctorsData);
-  }, [doctorsData]);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [searchQuery, setSearchQuery] = useState("");
+
+  const {
+    data: usersData,
+    isLoading,
+    refetch,
+  } = useListDoctorsQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+    searchTerm: searchQuery,
+  });
+  const doctors = usersData?.data || [];
+  const meta = usersData?.meta || { total: 0, totalPages: 1 };
+
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
 
-  const filteredDoctors = doctors
-    .filter((doctor) => {
-      const query = searchQuery.toLowerCase();
-      return (
-        doctor.name.toLowerCase().includes(query) ||
-        doctor.email.toLowerCase().includes(query) ||
-        (doctor.specialty && doctor.specialty.toLowerCase().includes(query))
-      );
-    })
-    .sort((a, b) => {
-      // Try to sort by createdAt first
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
+  const filteredDoctors = [...doctors].sort((a, b) => {
+    // Try to sort by createdAt first
+    const dateA = new Date(a.createdAt || 0).getTime();
+    const dateB = new Date(b.createdAt || 0).getTime();
 
-      if (dateA !== dateB) {
-        return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
-      }
+    if (dateA !== dateB) {
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    }
 
-      // Fallback to _id if createdAt is missing or equal (MongoDB _ids are chronologically sortable)
-      return sortOrder === "newest"
-        ? b._id.localeCompare(a._id)
-        : a._id.localeCompare(b._id);
-    });
+    return sortOrder === "newest"
+      ? b.id.localeCompare(a.id)
+      : a.id.localeCompare(b.id);
+  });
 
-  const totalPages = Math.ceil(filteredDoctors.length / itemsPerPage);
-  const paginatedDoctors = filteredDoctors.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
+  const totalPages = meta.totalPages;
+  const paginatedDoctors = filteredDoctors; // API already paginates
 
   useEffect(() => {
     setCurrentPage(1);
@@ -198,21 +188,22 @@ const DoctorsPage = () => {
   };
 
   const handleConfirm = async () => {
-    if (!selectedDoctor || !actionType) return;
+    if (!selectedDoctor) return;
 
     if (actionType === "status") {
+      const newStatus =
+        selectedDoctor.status === "ACTIVE" ? "RESTRICTED" : "ACTIVE";
       const result = await updateDoctorProfileStatus({
-        userId: selectedDoctor._id,
-        status: selectedDoctor.status === "ACTIVE" ? "RESTRICTED" : "ACTIVE",
+        userId: selectedDoctor.id,
+        status: newStatus,
       });
       if (result?.data.success) {
         refetch();
         toast.success("Doctor status updated successfully");
       }
-      console.log(result);
     } else if (actionType === "delete") {
       const result = await deleteDoctorProfile({
-        userId: selectedDoctor._id,
+        userId: selectedDoctor.id,
         status: "DELETED",
       });
       if (result?.data.success) {
@@ -305,7 +296,7 @@ const DoctorsPage = () => {
                     Specialty
                   </th>
                   <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Hospital
+                    Verified
                   </th>
                   <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Status
@@ -316,6 +307,9 @@ const DoctorsPage = () => {
                   </th>
                   <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Subscription
+                  </th>
+                  <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Created At
                   </th>
                   <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
                     Actions
@@ -339,7 +333,7 @@ const DoctorsPage = () => {
                           <Skeleton className="h-3 w-24" />
                         </td>
                         <td className="py-4 px-6">
-                          <Skeleton className="h-3 w-28" />
+                          <Skeleton className="h-6 w-20 rounded-full" />
                         </td>
                         <td className="py-4 px-6">
                           <Skeleton className="h-6 w-20 rounded-full" />
@@ -349,6 +343,9 @@ const DoctorsPage = () => {
                         </td>
                         <td className="py-4 px-6">
                           <Skeleton className="h-6 w-24 rounded-full" />
+                        </td>
+                        <td className="py-4 px-6">
+                          <Skeleton className="h-3 w-24" />
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex justify-end gap-3">
@@ -361,7 +358,7 @@ const DoctorsPage = () => {
                     ))
                   : paginatedDoctors.map((doctor) => (
                       <tr
-                        key={doctor._id}
+                        key={doctor.id}
                         className="hover:bg-gray-50/50 transition-colors group"
                       >
                         <td className="py-4 px-6">
@@ -380,10 +377,21 @@ const DoctorsPage = () => {
                           </div>
                         </td>
                         <td className="py-4 px-6 text-sm text-gray-700">
-                          {doctor.specialty || "N/A"}
+                          {doctor.specialties?.[0] || "N/A"}
                         </td>
-                        <td className="py-4 px-6 text-sm text-gray-500">
-                          {doctor.hospital || "N/A"}
+                        <td className="py-4 px-6">
+                          <span
+                            className={`
+                      inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium lowercase
+                      ${
+                        doctor.verified
+                          ? "bg-blue-100 text-blue-700 "
+                          : "bg-amber-100 text-amber-700"
+                      }
+                    `}
+                          >
+                            {doctor.verified ? "Verified" : "Pending"}
+                          </span>
                         </td>
                         <td className="py-4 px-6">
                           <span
@@ -400,23 +408,28 @@ const DoctorsPage = () => {
                           </span>
                         </td>
                         <td className="py-4 px-6 text-sm font-bold text-gray-900 pl-8">
-                          {doctor.cards}
+                          {doctor.cardsCount}
                         </td>
                         <td className="py-4 px-6">
                           <span
                             className={`
                       inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                       ${
-                        doctor.subscription === "Premium"
+                        doctor.subscriptionPlan === "Premium"
                           ? "bg-blue-100 text-blue-700"
-                          : doctor.subscription === "Enterprise"
+                          : doctor.subscriptionPlan === "Enterprise"
                             ? "bg-orange-100 text-orange-800"
                             : "bg-gray-100 text-gray-700"
                       }
                     `}
                           >
-                            {doctor.subscription || "N/A"}
+                            {doctor.subscriptionPlan || "N/A"}
                           </span>
+                        </td>
+                        <td className="py-4 px-6 text-sm text-gray-500">
+                          {doctor.createdAt
+                            ? format(new Date(doctor.createdAt), "MMM dd, yyyy")
+                            : "N/A"}
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-end gap-3 opacity-60 group-hover:opacity-100 transition-opacity">
@@ -497,7 +510,7 @@ const DoctorsPage = () => {
           setIsEditModalOpen(false);
           setSelectedDoctor(null);
         }}
-        userId={selectedDoctor?._id || null}
+        userId={selectedDoctor?.id || null}
         refetch={refetch}
       />
     </>

@@ -25,6 +25,14 @@ export const userApiSlice = apiSlice.injectEndpoints({
         return response;
       },
     }),
+    listDoctors: builder.query({
+      query: (params) => ({
+        url: `admin/users`,
+        params: params,
+      }),
+      providesTags: ["User"],
+      transformResponse: (response: any) => response,
+    }),
     getBlockedUsers: builder.query({
       query: () => ({
         url: `user/blocked`,
@@ -128,4 +136,5 @@ export const {
   useBlockedUserMutation,
   useUnblockUserMutation,
   useListAllUsersQuery,
+  useListDoctorsQuery,
 } = userApiSlice;
