@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 import NotificationPopup from "@/app/dashboard/overview/NotificationPopup";
+import { usePathname } from "next/navigation";
+import { Input } from "@/components/ui/input";
 
 interface TopBarProps {
   toggleSidebar: () => void;
@@ -9,12 +11,25 @@ interface TopBarProps {
 const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const notificationCount = 3; // This should come from your notification state
+  const pathname = usePathname();
+
+  const getPageTitle = (path: string) => {
+    if (path.includes("/dashboard/overview")) return "Overview";
+    if (path.includes("/dashboard/specialties")) return "Specialties Management";
+    if (path.includes("/dashboard/doctors")) return "Doctors Management";
+    if (path.includes("/dashboard/preference-cards")) return "Preference Cards";
+    if (path.includes("/dashboard/sutures")) return "Sutures Management";
+    if (path.includes("/dashboard/supplies")) return "Supplies Management";
+    return "Dashboard";
+  };
+
+  const title = getPageTitle(pathname);
 
   return (
     <>
-      <header className="sticky top-0 z-30 w-full bg-white border-b border-gray-100 px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-30 w-full bg-white border-b border-gray-100 px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Left: Mobile Menu Toggle & Title */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-shrink-0">
           <button
             onClick={toggleSidebar}
             className="lg:hidden p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-md"
@@ -24,14 +39,24 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
 
           <div className="flex flex-col">
             <h1 className="text-lg font-bold text-gray-900 leading-none">
-              Dashboard
+              {title}
             </h1>
-            <span className="text-xs text-gray-500 mt-1">Admin Panel</span>
+          </div>
+        </div>
+
+        {/* Center: Search Bar */}
+        <div className="flex-1 max-w-xl hidden md:block">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Input 
+              placeholder="Search specialties..." 
+              className="pl-10 bg-gray-50 border-gray-100 focus:bg-white transition-colors"
+            />
           </div>
         </div>
 
         {/* Right: Notifications */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-shrink-0">
           <button
             onClick={() => setIsNotificationOpen(!isNotificationOpen)}
             className="relative p-2 text-gray-500 hover:text-gray-700 transition-colors"
@@ -44,6 +69,12 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
               </span>
             )}
           </button>
+          
+          <div className="h-8 w-px bg-gray-100 mx-2 hidden sm:block" />
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700 hidden sm:block">Admin</span>
+          </div>
         </div>
       </header>
 
