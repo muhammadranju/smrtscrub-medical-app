@@ -224,7 +224,7 @@ const DoctorsPage = () => {
             title="Doctors"
             description="Manage doctors and their accounts"
           />
-          {/* <AddDoctorModal /> */}
+          <AddDoctorModal />
         </div>
         {/* Search and Filter Bar */}
         <div className="flex flex-col sm:flex-row gap-4 bg-white p-5 rounded-xl border">

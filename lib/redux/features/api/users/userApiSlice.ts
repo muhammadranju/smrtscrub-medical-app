@@ -33,6 +33,15 @@ export const userApiSlice = apiSlice.injectEndpoints({
       providesTags: ["User"],
       transformResponse: (response: any) => response,
     }),
+    createUser: builder.mutation({
+      query: (payload) => ({
+        url: `users`,
+        method: "POST",
+        body: payload,
+      }),
+      invalidatesTags: ["User"],
+      transformResponse: (response: any) => response,
+    }),
     getBlockedUsers: builder.query({
       query: () => ({
         url: `user/blocked`,
@@ -137,4 +146,5 @@ export const {
   useUnblockUserMutation,
   useListAllUsersQuery,
   useListDoctorsQuery,
+  useCreateUserMutation,
 } = userApiSlice;
