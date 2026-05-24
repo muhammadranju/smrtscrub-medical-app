@@ -7,28 +7,36 @@ import {
   DialogContent,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useGetPublicPreferenceCardsQuery,
   useGetSinglePreferenceCardQuery,
-  useUpdatePreferenceCardApprovalMutation,
-  useUpdatePreferenceCardRejectMutation,
+  useUpdatePreferenceCardMutation,
 } from "@/lib/redux/features/api/preferences/preferenceApiSlice";
 import { Check, Eye, X } from "lucide-react";
 import { useState } from "react";
 import CardDetailsContent from "./CardDetailsContent";
 
+import Pagination from "@/components/dashboard/Pagination";
+
 export interface IPreferenceCard {
-  _id: string;
+  id: string;
   cardTitle: string;
-  surgeonName: string;
-  surgeonSpecialty: string;
-  isVerified: boolean;
-  totalDownloads: number;
+  surgeon: {
+    name: string;
+    specialty: string;
+  };
+  verificationStatus: string;
+  downloadCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const PreferenceCardsList = () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [selectedCard, setSelectedCard] = useState<IPreferenceCard | null>(
     null,
   );
@@ -36,42 +44,36 @@ const PreferenceCardsList = () => {
     data: preferenceCardsData,
     isLoading,
     refetch,
-  } = useGetPublicPreferenceCardsQuery(null);
+  } = useGetPublicPreferenceCardsQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+  });
 
   const preferenceCards = preferenceCardsData?.data || [];
+  const meta = preferenceCardsData?.meta || { total: 0, totalPages: 1 };
 
   const { data: singlePreferenceCardData, isLoading: isSingleLoading } =
-    useGetSinglePreferenceCardQuery(selectedCard?._id || "", {
-      skip: !selectedCard?._id,
+    useGetSinglePreferenceCardQuery(selectedCard?.id || "", {
+      skip: !selectedCard?.id,
     });
   const singlePreferenceCard = singlePreferenceCardData?.data || null;
 
-  const [approveCard, { isLoading: isApproving }] =
-    useUpdatePreferenceCardApprovalMutation();
-  const [rejectCard, { isLoading: isRejecting }] =
-    useUpdatePreferenceCardRejectMutation();
+  const [updatePreferenceCard, { isLoading: isUpdating }] =
+    useUpdatePreferenceCardMutation();
 
   console.log(singlePreferenceCard);
 
   const handleApprove = async () => {
     if (!selectedCard) return;
     try {
-      await approveCard(selectedCard._id).unwrap();
+      await updatePreferenceCard({
+        id: selectedCard.id,
+        verificationStatus: "VERIFIED",
+      }).unwrap();
       refetch();
       setSelectedCard(null);
     } catch (error) {
       console.error("Failed to approve preference card", error);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!selectedCard) return;
-    try {
-      await rejectCard(selectedCard._id).unwrap();
-      refetch();
-      setSelectedCard(null);
-    } catch (error) {
-      console.error("Failed to reject preference card", error);
     }
   };
 
@@ -136,23 +138,23 @@ const PreferenceCardsList = () => {
                   ))
                 : preferenceCards.map((card: IPreferenceCard) => (
                     <tr
-                      key={card._id}
+                      key={card.id}
                       className="hover:bg-gray-50/50 transition-colors"
                     >
                       <td className="py-4 px-6">
                         <span className="font-bold text-gray-900 text-sm">
-                          {card?.surgeonName}
+                          {card?.surgeon?.name}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-sm text-gray-900">
                         {card?.cardTitle}
                       </td>
                       <td className="py-4 px-6 text-sm text-gray-500">
-                        {card?.surgeonSpecialty}
+                        {card?.surgeon?.specialty}
                       </td>
                       <td className="py-4 px-6 text-center">
                         <div className="flex justify-center">
-                          {card.isVerified ? (
+                          {card.verificationStatus === "VERIFIED" ? (
                             <div className="h-6 w-6 rounded-full bg-green-100 flex items-center justify-center">
                               <Check
                                 size={14}
@@ -172,7 +174,7 @@ const PreferenceCardsList = () => {
                         </div>
                       </td>
                       <td className="py-4 px-6 text-sm font-bold text-gray-900 pl-8">
-                        {card.totalDownloads}
+                        {card.downloadCount}
                       </td>
                       <td className="py-4 px-6 text-right">
                         <Dialog>
@@ -184,17 +186,23 @@ const PreferenceCardsList = () => {
                               <Eye size={20} />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="p-0 overflow-hidden max-w-2xl">
+                          <DialogContent 
+                            showCloseButton={false}
+                            className="p-0 overflow-hidden max-w-2xl relative"
+                          >
+                            <DialogClose asChild>
+                              <button className="absolute right-6 top-6 z-10 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all outline-none">
+                                <X size={20} />
+                              </button>
+                            </DialogClose>
                             <DialogTitle className="sr-only">
                               Preference card details
                             </DialogTitle>
                             <CardDetailsContent
                               onApprove={handleApprove}
-                              onReject={handleReject}
                               selectedCard={singlePreferenceCard}
                               isLoading={isSingleLoading}
-                              isApproving={isApproving}
-                              isRejecting={isRejecting}
+                              isUpdating={isUpdating}
                             />
                           </DialogContent>
                         </Dialog>
@@ -205,6 +213,12 @@ const PreferenceCardsList = () => {
           </table>
         </div>
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={meta.totalPages}
+        onPageChange={setCurrentPage}
+      />
     </>
   );
 };

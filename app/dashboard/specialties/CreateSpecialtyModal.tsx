@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,7 @@ import { Label } from "@/components/ui/label";
 
 import { useCreateSpecialtyMutation } from "@/lib/redux/features/api/specialties/specialtyApiSlice";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 
 interface CreateSpecialtyModalProps {
   isOpen: boolean;
@@ -46,7 +47,15 @@ const CreateSpecialtyModal: React.FC<CreateSpecialtyModalProps> = ({
   };
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px] p-8">
+      <DialogContent 
+        showCloseButton={false}
+        className="sm:max-w-[450px] p-8 relative"
+      >
+        <DialogClose asChild>
+          <button className="absolute right-6 top-6 z-10 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all outline-none">
+            <X size={20} />
+          </button>
+        </DialogClose>
         <DialogHeader className="space-y-3">
           <DialogTitle className="text-2xl font-bold text-gray-900">
             Create Specialty
