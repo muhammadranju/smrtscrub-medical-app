@@ -36,7 +36,7 @@ const ITEMS_PER_PAGE = 10;
 function SuppliesPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: suppliesData, isLoading: isLoadingSupplies } =
+  const { data: suppliesData, isLoading: isLoadingSupplies, isFetching } =
     useGetSuppliesQuery({ page: currentPage, limit: ITEMS_PER_PAGE });
 
   const [createSupply, { isLoading: isCreatingSupply }] =
@@ -60,8 +60,8 @@ function SuppliesPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const supplies = suppliesData?.data || [];
-  const pagination = suppliesData?.pagination;
-  const totalPages = pagination?.totalPage ?? 1;
+  const totalPages =
+    suppliesData?.pagination?.totalPage || suppliesData?.meta?.totalPages || 1;
 
   const handleAddSingle = async () => {
     if (!singleName.trim()) return;
@@ -248,7 +248,12 @@ function SuppliesPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto relative">
+          {isFetching && !isLoadingSupplies && (
+            <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-[#9945FF] border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
@@ -339,13 +344,11 @@ function SuppliesPage() {
           </table>
         </div>
 
-        {!isLoadingSupplies && (
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
-        )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
       <Dialog
