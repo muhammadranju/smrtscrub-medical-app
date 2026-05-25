@@ -8,6 +8,7 @@ import {
   FileText,
   LayoutGrid,
   LogOut,
+  Stethoscope,
   Users,
   X,
 } from "lucide-react";
@@ -32,6 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       icon: LayoutGrid,
       href: "/dashboard/overview",
     },
+    { label: "Specialties", icon: Stethoscope, href: "/dashboard/specialties" },
     { label: "Doctors", icon: Users, href: "/dashboard/doctors" },
     {
       label: "Preference Cards",

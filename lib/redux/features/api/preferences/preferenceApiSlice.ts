@@ -5,44 +5,28 @@ import { apiSlice } from "../apiSlice";
 export const preferenceApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getPublicPreferenceCards: builder.query({
-      query: () => ({
-        url: `/preference-card/public`,
+      query: (params) => ({
+        url: `preference-cards`,
+        params: params,
       }),
       providesTags: ["Dashboard"],
-      // Transform response to handle different response structures
-      transformResponse: (response) => {
-        return response;
-      },
+      transformResponse: (response: any) => response,
     }),
     getSinglePreferenceCard: builder.query({
       query: (id: string) => ({
-        url: `/preference-card/${id}`,
+        url: `preference-cards/${id}`,
       }),
       providesTags: ["Dashboard"],
-      // Transform response to handle different response structures
-      transformResponse: (response) => {
-        return response;
-      },
+      transformResponse: (response: any) => response,
     }),
-    updatePreferenceCardApproval: builder.mutation({
-      query: (id: string) => ({
+    updatePreferenceCard: builder.mutation({
+      query: ({ id, ...payload }) => ({
         method: "PATCH",
-        url: `/preference-card/${id}/approve`,
+        url: `preference-cards/${id}`,
+        body: payload,
       }),
-      // Transform response to handle different response structures
-      transformResponse: (response) => {
-        return response;
-      },
-    }),
-    updatePreferenceCardReject: builder.mutation({
-      query: (id: string) => ({
-        method: "PATCH",
-        url: `/preference-card/${id}/reject`,
-      }),
-      // Transform response to handle different response structures
-      transformResponse: (response) => {
-        return response;
-      },
+      invalidatesTags: ["Dashboard"],
+      transformResponse: (response: any) => response,
     }),
   }),
 });
@@ -50,6 +34,5 @@ export const preferenceApiSlice = apiSlice.injectEndpoints({
 export const {
   useGetPublicPreferenceCardsQuery,
   useGetSinglePreferenceCardQuery,
-  useUpdatePreferenceCardApprovalMutation,
-  useUpdatePreferenceCardRejectMutation,
+  useUpdatePreferenceCardMutation,
 } = preferenceApiSlice;

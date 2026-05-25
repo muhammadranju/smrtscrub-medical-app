@@ -1,36 +1,49 @@
 import React, { useState } from "react";
-import { X, User, UserPlus } from "lucide-react";
+import { X, User, UserPlus, Eye, EyeOff } from "lucide-react";
+import { useCreateUserMutation } from "@/lib/redux/features/api/users/userApiSlice";
+import { toast } from "sonner";
 
 export default function AddDoctorModal() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    specialty: "",
-    hospital: "",
+    password: "",
     phone: "",
-    subscription: "",
+    location: "",
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [createUser, { isLoading }] = useCreateUserMutation();
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
-  const handleSubmit = () => {
-    console.log("Doctor data:", formData);
-    setIsOpen(false);
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      specialty: "",
-      hospital: "",
-      phone: "",
-      subscription: "",
-    });
+  const handleSubmit = async () => {
+    try {
+      const response = await createUser(formData).unwrap();
+      if (response.success) {
+        toast.success("Doctor added successfully");
+        setIsOpen(false);
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          password: "",
+          phone: "",
+          location: "",
+        });
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to add doctor");
+      console.error("Error adding doctor:", error);
+    }
   };
 
   return (
@@ -60,7 +73,7 @@ export default function AddDoctorModal() {
             </div>
 
             {/* Form */}
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               {/* Profile Picture & Name */}
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-full bg-[#9945FF] flex items-center justify-center flex-shrink-0 mt-6">
@@ -75,85 +88,84 @@ export default function AddDoctorModal() {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
                     placeholder="Enter doctor name"
+                    required
                   />
                 </div>
               </div>
 
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
-                  placeholder="Enter email address"
-                />
+              {/* Email & Password Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
+                    placeholder="Enter email address"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
+                      placeholder="Enter password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Specialty */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Specialty
-                </label>
-                <input
-                  type="text"
-                  name="specialty"
-                  value={formData.specialty}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
-                  placeholder="Enter specialty"
-                />
-              </div>
-
-              {/* Hospital */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Hospital
-                </label>
-                <input
-                  type="text"
-                  name="hospital"
-                  value={formData.hospital}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
-                  placeholder="Enter hospital name"
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
-                  placeholder="Enter phone number"
-                />
-              </div>
-
-              {/* Subscription */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Subscription
-                </label>
-                <input
-                  type="text"
-                  name="subscription"
-                  value={formData.subscription}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
-                  placeholder="Enter subscription type"
-                />
+              {/* Phone & Location Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
+                    placeholder="Enter phone number"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Location (City)
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9945FF] focus:border-transparent"
+                    placeholder="Enter city/location"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
@@ -162,14 +174,23 @@ export default function AddDoctorModal() {
               <button
                 onClick={() => setIsOpen(false)}
                 className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                disabled={isLoading}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-6 py-3 bg-[#9945FF] text-white rounded-lg font-medium hover:bg-[#8534E6] transition-colors"
+                disabled={isLoading}
+                className="px-6 py-3 bg-[#9945FF] text-white rounded-lg font-medium hover:bg-[#8534E6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                Add Doctor
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  "Add Doctor"
+                )}
               </button>
             </div>
           </div>

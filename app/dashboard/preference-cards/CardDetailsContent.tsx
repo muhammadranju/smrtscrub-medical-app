@@ -40,20 +40,16 @@ export interface SurgicalCard {
 
 interface CardDetailsContentProps {
   onApprove: () => void;
-  onReject: () => void;
   selectedCard: SurgicalCard | null;
   isLoading: boolean;
-  isApproving: boolean;
-  isRejecting: boolean;
+  isUpdating: boolean;
 }
 
 const CardDetailsContent: React.FC<CardDetailsContentProps> = ({
   onApprove,
-  onReject,
   selectedCard,
   isLoading,
-  isApproving,
-  isRejecting,
+  isUpdating,
 }) => {
   if (isLoading || !selectedCard) {
     return (
@@ -193,22 +189,11 @@ const CardDetailsContent: React.FC<CardDetailsContentProps> = ({
         <DialogClose asChild>
           <Button
             onClick={onApprove}
-            disabled={isApproving}
+            disabled={isUpdating}
             className="flex-1 bg-[#00E599] hover:bg-[#00d08a] text-white font-bold py-3.5 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
           >
             <Check size={18} strokeWidth={3} />
-            {isApproving ? "Approving..." : "Approve & Verify"}
-          </Button>
-        </DialogClose>
-        <DialogClose asChild>
-          <Button
-            onClick={onReject}
-            disabled={isRejecting}
-            variant="outline"
-            className="flex-1 text-red-600 border-red-200 hover:bg-red-50 font-bold py-3.5 px-4 rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
-          >
-            <X size={18} strokeWidth={3} />
-            {isRejecting ? "Rejecting..." : "Reject"}
+            {isUpdating ? "Approving..." : "Approve & Verify"}
           </Button>
         </DialogClose>
       </div>
